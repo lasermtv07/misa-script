@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>misalang IR</title>
+	<style>
+		#s {
+			width:100%;
+		}
+		main {
+			width:80%;
+			margin:auto;
+		}
+		button {
+			width:100%;
+		}
+	</style>
+</head>
+<body>
+	<center><h1>misascript IR</h1></center>
+	<hr />
+<main>
+	<textarea id=s rows=30 ></textarea>
+	<button
+		onmousedown="ir(document.getElementById('s').value)"
+	>
+		Compile
+	</button>
+	<script src=index.js ></script>
+</main>
+</body>
+</html>
