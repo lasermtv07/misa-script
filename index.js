@@ -1,4 +1,3 @@
-//TODO: fix broken strings (newline breaks them :/)
 function ir(code){
 	function parseArr(t){
 		let tt=t.split("");
@@ -36,6 +35,13 @@ function ir(code){
 	var labels=[];
 	var stack=[];
 	var vars=[{name:'a',value:5,type:'num'}];
+
+	var ix=-1;
+	var phi;
+	var psi;
+	var trg;
+	var phix=-1;
+	var psix=-1;
 	for(let i=0;i<l.length;i++){
 		//console.log(l[i])
 		let s=(l[i].trim()).split(" ");
@@ -71,6 +77,7 @@ function ir(code){
 					}
 					else if(t[0]=="'" || t[0]=='"'){
 						let tt=t.split("");
+						console.log(s)
 						tt.shift();
 						tt.pop();
 						vars[idx]={name:vars[idx].name,value:tt.join(""),type:'str'};
@@ -134,7 +141,8 @@ function ir(code){
 				else if(p=='false') stack.push({value:0,type:'bool'});
 				else if(!isNaN(parseInt(p))) stack.push({value:parseInt(p),type:'num'});
 				else if(p[0]=='"' || p[0]=="'"){
-					p=p.split("");
+					s.shift();
+					p=s.join(" ").split("");
 					p.shift();
 					p.pop();
 					stack.push({value:p.join(""),type:'str'});
@@ -164,6 +172,73 @@ function ir(code){
 				}
 				else throw new Error('[misaIR] Dont know what to push!');
 				break;
+			case 'pop':
+				if(s[1]=='NULL'){
+					stack.pop();
+					break;
+				}
+				ix=-1;
+				for(let j=0;j<vars.length;j++){
+					if(vars[j].name==s[1]) ix=j;
+				}
+				if(ix==-1) throw new Error('[misaIR] trying to pop into nonexistent variable');
+				let towrite=stack.pop();
+				vars[ix]={name:s[1],value:towrite.value,type:towrite.type};
+				break;
+			case 'equ':
+			case 'neq':
+			case 'lt':
+			case 'gt':
+				phi=s[2];
+				psi=s[3];
+				phivar=false;
+				psivar=false;
+				if(phi[0]=='*'){
+					phivar=true;
+					phi=phi.split("");
+					phi.shift();
+					phi=phi.join("");
+				}
+				if(psi[0]=='*'){
+					psivar=true;
+					psi=psi.split("");
+					psi.shift();
+					psi=psi.join("");
+				}
+				trg=s[1];
+				ix=-1;
+				phix=-1;
+				psix=-1;
+				for(let j=0;j<vars.length;j++){
+					if(trg==vars[j].name) ix=j;
+					if(phi==vars[j].name) phix=j;
+					if(psi==vars[j].name) psix=j;
+				}
+				if(ix==-1) throw new Error('[misaIR] trying to do comparison with nonexistent variables');
+
+				vars[ix]['type']='bool';
+				if(phivar) phi=vars[phix].value;
+				else phi=parseInt(phi);
+				if(psivar) psi=vars[psix].value;
+				else psi=parseInt(psi);
+				if(phi==undefined || psi==undefined) throw new Error('[misaIR] trying to do comparison with noniteger!');
+				if(s[0]=='equ') vars[ix]['value']=((phi==psi)?1:0);
+				if(s[0]=='neq') vars[ix]['value']=((phi!=psi)?1:0);
+				if(s[0]=='lt') vars[ix]['value']=((phi<psi)?1:0);
+				if(s[0]=='gt') vars[ix]['value']=((phi>psi)?1:0);
+				break;
+			case 'not':
+				trg=s[1];
+				phi=s[2];
+				ix=-1;
+				phix=-1;
+				for(let j=0;j<vars.length;j++){
+					if(vars[j].name==trg) ix=j;
+					if(vars[j].name==phi) phix=j;
+				}
+				if(trg==-1 || phi==-1) throw new Error('[misaIR] trying to negate with nonexistent variables!');
+				vars[ix]['value']=!vars[phix]['value'];
+				vars[ix]['type']='bool';
 		}
 	}
 	console.log(labels)
