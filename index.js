@@ -35,6 +35,8 @@ function ir(code){
 	var labels=[];
 	var stack=[];
 	var vars=[{name:'a',value:5,type:'num'}];
+	var start=-1;
+	var skip=false;
 
 	var ix=-1;
 	var phi;
@@ -43,12 +45,21 @@ function ir(code){
 	var phix=-1;
 	var psix=-1;
 	for(let i=0;i<l.length;i++){
-		//console.log(l[i])
+		let t=(l[i].trim()).split(" ");
+		if(t[0]=='label'){
+			labels.push({name:t[1],line:i});
+			if(t[1]=='start') start=i;
+		}
+	}
+	if(start==-1) throw new Error('[misaIR] could not find starting position!');
+	let i=start;
+	while(i<l.length){
+		if(skip){
+			i++;
+			skip=false;
+		}
 		let s=(l[i].trim()).split(" ");
 		switch(s[0]){
-			case 'label':
-				labels.push({name:s[1],line:i});
-				break;
 			case 'let':
 				//if doesnt exist add variable
 				let w=true;
@@ -239,7 +250,73 @@ function ir(code){
 				if(trg==-1 || phi==-1) throw new Error('[misaIR] trying to negate with nonexistent variables!');
 				vars[ix]['value']=!vars[phix]['value'];
 				vars[ix]['type']='bool';
+				break;
+			case 'and':
+			case 'or':
+				trg=s[1];
+				phi=s[2];
+				psi=s[3];
+				if(phi[0]=='*'){
+					phi=phi.split("");
+					phi.shift();
+					phi=phi.join("");
+					for(let j of vars){
+						if(j.name==phi) phi=j.value;
+					}
+					if("*"+phi==s[2]) throw new Error('[misaIR] trying to do operations with nonexistent variable!');
+					console.log(phi);
+				}
+				if(psi[0]=='*'){
+					psi=psi.split("");
+					psi.shift();
+					psi=psi.join("");
+					for(let j of vars){
+						if(j.name==psi) psi=j.value;
+					}
+					if("*"+psi==s[3]) throw new Error('[misaIR] trying to do operations with nonexisting variable!');
+				}
+				if(phi=='false') phi=0;
+				if(psi=='false') psi=0;
+				ix=-1;
+				for(let j=0;j<vars.length;j++){
+					if(vars[j].name==trg) ix=j;
+				}
+				if(ix==-1) throw new Error('[misaIR] cannot write to nonexistent variable!');
+				if(s[0]=='and') vars[ix]['value']=((phi&&psi)?1:0);
+				if(s[0]=='or') vars[ix]['value']=((phi||psi)?1:0);
+				vars[ix]['type']='bool';
+				break;
+			case 'log':
+				s.shift();
+				console.log(s.join(" "));
+				break;
+			case 'cmp':
+				phi=s[1];
+				if(phi[0]=='*'){
+					phi=phi.split("");
+					phi.shift();
+					phi=phi.join();
+					for(let j of vars){
+						if(j.name==phi){
+							phi=j.value;
+							break;
+						}
+					}
+				}
+				if(!phi||phi=='false') skip=true;
+				break;
+			case 'jmp':
+				phi=-1;
+				if(!isNaN(s[1])) phi=parseInt(s[1]);
+				for(let j of labels){
+					if(j.name==s[1]) phi=j.line;
+				}
+				i=phi;
+				console.log('det '+i);
+				break;
+
 		}
+		i++;
 	}
 	console.log(labels)
 	console.log(vars)

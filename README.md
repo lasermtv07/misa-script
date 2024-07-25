@@ -11,3 +11,6 @@ still WIP, too.
 - `pop a` - removes data from stack and saves it into a variable
 - `equ/neq/lt/gt t a b` - compares integer values from `a` and `b`, saves boolean result to `t`
 - `not t a` - does the javascript **not** operation to `a` and saves result to `t`
+- `and/or t a b`- des the **and/or** binary operation between two variables
+- `jmp a` - jumps to specific address or label
+- `cmp a` - if the variable **a** is false, ignore following operation
